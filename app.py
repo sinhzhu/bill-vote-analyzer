@@ -24,7 +24,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.title("Legislative Bill & Vote Analyzer")
-st.write("Upload congress.gov roll-call CSVs (e.g. House votes 362 and 295). "
+st.write("Analyze congress.gov roll-call CSVs (e.g. House votes 362 and 295). "
          "The app counts Yea/Nay, checks pass/fail, and scores party-line, "
          "bipartisanship, and agreement.")
 
@@ -81,4 +81,4 @@ if uploads:
                            index=min(1, len(names) - 1))
     st.write(f"Agreement: **{cong.agreement_rate(id1, id2):.0%}**")
 else:
-    st.info("Upload a CSV(s) to begin. Try the sample files in the github repo!")
+    st.info("Upload a CSV(s) to begin. Or try the sample files in the github repo (in demo-data)!")
