@@ -1,0 +1,10 @@
+name: regression-diagnostics
+title:
+username: sinhzhu
+account: sinhzhu
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 17825691
+bundleId: 12506289
+url: https://sinhzhu.shinyapps.io/regression-diagnostics/
+version: 1
