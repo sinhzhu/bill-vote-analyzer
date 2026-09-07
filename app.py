@@ -14,6 +14,12 @@ st.markdown(
     html, body, [class*="st-"], .stMarkdown, .stText {
         font-family: "Instrument Serif", Georgia, "Times New Roman", serif !important;
     }
+        span[data-testid^="stIcon"],
+    span[class*="material-symbols"],
+    i[class*="material-symbols"],
+    [class*="materialSymbols"] {
+        font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Noto Sans Symbols 2" !important;
+    }
     .stApp { background: #071600; color: #e4ede1; }
     [data-testid="stSidebar"] { background: #16240f; }
     a { color: #c1bcbc !important; }
