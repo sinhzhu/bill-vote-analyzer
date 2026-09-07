@@ -28,7 +28,7 @@ st.write("Analyze congress.gov roll-call CSVs (e.g. House votes 362 and 295). "
          "The app counts Yea/Nay, checks pass/fail, and scores party-line, "
          "bipartisanship, and agreement.")
 
-uploads = st.file_uploader("Upload 1-2 vote CSVs", type="csv",
+uploads = st.file_uploader("Upload vote CSVs", type="csv",
                            accept_multiple_files=True)
 
 bill_ids = st.text_input("Bill labels (comma-separated, optional)",
