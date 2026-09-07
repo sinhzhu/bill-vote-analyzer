@@ -31,7 +31,7 @@ st.markdown(
 )
 st.title("Legislative Bill & Vote Analyzer")
 st.write("Analyze congress.gov roll-call CSVs (e.g. House votes 362 and 295). "
-         "The app counts Yea/Nay, checks pass/fail, and scores party-line, "
+         "Counts Yea/Nay, checks pass/fail, and scores party-line, "
          "bipartisanship, and agreement.")
 
 uploads = st.file_uploader("Upload vote CSVs", type="csv",
