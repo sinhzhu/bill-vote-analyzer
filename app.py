@@ -30,7 +30,7 @@ st.write("Analyze congress.gov roll-call CSVs (e.g. House votes 362 and 295). "
 
 uploads = st.file_uploader("Upload vote CSVs", type="csv",
                            accept_multiple_files=True
-                          label_visibility="collapsed"))
+                          label_visibility="collapsed")
 
 bill_ids = st.text_input("Bill labels (comma-separated, optional)",
                          value="h119-362, h119-295")
