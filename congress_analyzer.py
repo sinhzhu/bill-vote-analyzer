@@ -11,8 +11,8 @@ from enum import Enum
 class VoteChoice(Enum):
     YEA = "Yea"
     NAY = "Nay"
-    ABSTAIN = "Abstain"   # e.g. "Present"
-    ABSENT = "Absent"     # e.g. "Not Voting"
+    ABSTAIN = "Abstain"   
+    ABSENT = "Absent"     
 
     @staticmethod
     def from_string(raw: str) -> "VoteChoice":
@@ -25,15 +25,13 @@ class VoteChoice(Enum):
             return VoteChoice.ABSTAIN
         return VoteChoice.ABSENT
 
-
-#Legislator - identifies lawmakers
 @dataclass
 class Legislator:
     legislator_id: str
     name: str
-    party: str   # normalized: "D", "R", or "I"
+    party: str   
     state: str
-    chamber: str  # "house" or "senate"
+    chamber: str 
 
     @staticmethod
     def normalize_party(raw: str) -> str:
@@ -44,8 +42,6 @@ class Legislator:
             return "R"
         return "I"
 
-
-#Chamber - inheritance system
 class Chamber:
     def __init__(self, name: str, total_seats: int):
         self.name = name
@@ -73,8 +69,6 @@ def make_chamber(name: str) -> Chamber:
     name = (name or "house").strip().lower()
     return SenateChamber() if name == "senate" else HouseChamber()
 
-
-#Bill - tracks votes
 @dataclass
 class Bill:
     bill_id: str
@@ -116,8 +110,6 @@ class Bill:
             return 0.0
         return abs(d - r)
 
-
-#Congress - tracks legislators and bills
 class Congress:
     def __init__(self) -> None:
         self.legislators: dict[str, Legislator] = {}
