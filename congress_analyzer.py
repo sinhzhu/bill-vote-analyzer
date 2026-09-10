@@ -6,8 +6,6 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 
-
-#Vote choice - guardrails
 class VoteChoice(Enum):
     YEA = "Yea"
     NAY = "Nay"
