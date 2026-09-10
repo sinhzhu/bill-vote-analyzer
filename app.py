@@ -14,7 +14,7 @@ st.markdown(
     html, body, [class*="st-"], .stMarkdown, .stText {
         font-family: "Instrument Serif", Georgia, "Times New Roman", serif !important;
     }
-        span[data-testid^="stIcon"],
+    span[data-testid^="stIcon"],
     span[class*="material-symbols"],
     i[class*="material-symbols"],
     [class*="materialSymbols"] {
@@ -31,12 +31,13 @@ st.markdown(
 )
 st.title("Legislative Bill & Vote Analyzer")
 st.write("Analyze congress.gov roll-call CSVs (e.g. House votes 362 and 295). "
-         "Counts Yea/Nay, checks pass/fail, and scores party-line, "
+         "The app counts Yea/Nay, checks pass/fail, and scores party-line, "
          "bipartisanship, and agreement.")
 
-uploads = st.file_uploader("Upload vote CSVs", type="csv",
+st.subheader("Upload your vote CSVs")
+uploads = st.file_uploader("vote_csvs", type="csv",
                            accept_multiple_files=True,
-                          label_visibility="collapsed")
+                           label_visibility="collapsed")
 
 bill_ids = st.text_input("Bill labels (comma-separated, optional)",
                          value="h119-362, h119-295")
