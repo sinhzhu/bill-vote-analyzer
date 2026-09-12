@@ -3,7 +3,7 @@ import os
 
 import streamlit as st
 
-from congress_analyzer import congress, housecham, SenateChamber
+from congress_analyzer import votechoice, congress, housecham, senatecham
 
 
 st.set_page_config(page_title="Bill & Vote Analyzer", layout="centered")
@@ -61,19 +61,18 @@ if uploads:
     st.subheader(f"Loaded: {len(cong.legislators)} lawmakers, "
                  f"{len(cong.bills)} bills")
     st.write(f"House quorum = {housecham().quorum()} | "
-             f"Senate quorum = {SenateChamber().quorum()}")
+             f"Senate quorum = {senatecham().quorum()}")
 
-    for bid, bill in cong.bills.items():
-        t = bill.tally()
-        from congress_analyzer import VoteChoice
-        st.markdown(f"### {bid} — {'PASSED' if bill.passed() else 'FAILED'}")
-        st.write(f"Yea={t[VoteChoice.YEA]} Nay={t[VoteChoice.NAY]} "
-                 f"Abstain={t[VoteChoice.ABSTAIN]} Absent={t[VoteChoice.ABSENT]} | "
-                 f"party-line={bill.party_line_score(cong.legislators):.2f}")
+    for bid, b in cong.bills.items():
+        t = b.tally()
+        st.markdown(f"### {bid} — {'PASSED' if b.passed() else 'FAILED'}")
+        st.write(f"Yea={t[votechoice.YEA]} Nay={t[votechoice.NAY]} "
+                 f"Abstain={t[votechoice.ABSTAIN]} Absent={t[votechoice.ABSENT]} | "
+                 f"party-line={b.pl_score(cong.legislators):.2f}")
 
     st.subheader("Most bipartisan (cross party lines most)")
     rows = []
-    for lid, score in cong.most_bipartisan(10):
+    for lid, score in cong.bipartisan(10):
         leg = cong.legislators[lid]
         rows.append({"Name": leg.name, "Party": leg.party,
                      "State": leg.state, "Score": round(score, 2)})
@@ -87,6 +86,6 @@ if uploads:
     with c2:
         id2 = st.selectbox("Person 2", names,
                            index=min(1, len(names) - 1))
-    st.write(f"Agreement: **{cong.agreement_rate(id1, id2):.0%}**")
+    st.write(f"Agreement: **{cong.agreerate(id1, id2):.0%}**")
 else:
     st.info("Upload a CSV(s) to begin. Or try the sample files in the github repo (in demo-data)!")

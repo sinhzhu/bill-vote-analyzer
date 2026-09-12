@@ -58,14 +58,14 @@ class housecham(chamber):
         super().__init__("house", 435)
 
 
-class SenateChamber(chamber):
+class senatecham(chamber):
     def __init__(self) -> None:
         super().__init__("senate", 100)
 
 
-def make_chamber(name: str) -> chamber:
+def make_cham(name: str) -> chamber:
     name = (name or "house").strip().lower()
-    return SenateChamber() if name == "senate" else housecham()
+    return senatecham() if name == "senate" else housecham()
 
 @dataclass
 class bill:
@@ -88,7 +88,7 @@ class bill:
         t = self.tally()
         return t[votechoice.YEA] > t[votechoice.NAY]
 
-    def party_line_score(self, legislators: dict) -> float:
+    def pl_score(self, legislators: dict) -> float:
         def yea_share(party: str) -> float | None:
             yeas = nays = 0
             for lid, v in self.votes.items():
@@ -129,14 +129,14 @@ class congress:
     def csv_load(self, path: str, bill_id: str,
                                title: str = "", chamber_name: str = "house") -> bill:
         """Read a congress.gov roll-call CSV (with metadata rows on top)."""
-        bill = self.bills.get(bill_id)
-        if bill is None:
-            bill = bill(bill_id=bill_id, title=title or bill_id,
-                        chamber_name=chamber_name)
-            self.add_bill(bill)
+        existing = self.bills.get(bill_id)
+        if existing is None:
+            existing = bill(bill_id=bill_id, title=title or bill_id,
+                            chamber_name=chamber_name)
+            self.add_bill(existing)
         else:
             if title:
-                bill.title = title
+                existing.title = title
 
         with open(path, newline="", encoding="utf-8-sig") as f:
             reader = csv.reader(f)
@@ -177,12 +177,12 @@ class congress:
                         legislator_id=lid, name=clean_name,
                         party=party, state=raw_state,
                         chamber=chamber_name))
-                bill.record(lid, votechoice.from_string(raw_vote))
-        return bill
+                existing.record(lid, votechoice.from_string(raw_vote))
+        return existing
 
-    def majority(self, bill: bill, party: str) -> votechoice | None:
+    def majority(self, targ_bill: bill, party: str) -> votechoice | None:
         yeas = nays = 0
-        for lid, v in bill.votes.items():
+        for lid, v in targ_bill.votes.items():
             leg = self.legislators.get(lid)
             if leg is None or leg.party != party:
                 continue
@@ -199,23 +199,23 @@ class congress:
         if leg is None:
             return 0.0
         crossed = total = 0
-        for bill in self.bills.values():
-            v = bill.votes.get(legislator_id)
+        for b in self.bills.values():
+            v = b.votes.get(legislator_id)
             if v not in (votechoice.YEA, votechoice.NAY):
                 continue
-            majority = self.majority(bill, leg.party)
-            if majority is None:
+            maj = self.majority(b, leg.party)
+            if maj is None:
                 continue
             total += 1
-            if v != majority:
+            if v != maj:
                 crossed += 1
         return (crossed / total) if total else 0.0
 
     def agreerate(self, id1: str, id2: str) -> float:
         same = both = 0
-        for bill in self.bills.values():
-            v1 = bill.votes.get(id1)
-            v2 = bill.votes.get(id2)
+        for b in self.bills.values():
+            v1 = b.votes.get(id1)
+            v2 = b.votes.get(id2)
             if v1 not in (votechoice.YEA, votechoice.NAY):
                 continue
             if v2 not in (votechoice.YEA, votechoice.NAY):
@@ -232,17 +232,17 @@ class congress:
         return scored[:n]
 
 
-def demo_report(cong: congress) -> str:
+def demo_rep(cong: congress) -> str:
     lines = []
     lines.append(f"legislators: {len(cong.legislators)}  Bills: {len(cong.bills)}")
-    for bid, bill in cong.bills.items():
-        t = bill.tally()
+    for bid, b in cong.bills.items():
+        t = b.tally()
         lines.append(
-            f"\nBill {bid} ({bill.title}): "
+            f"\nBill {bid} ({b.title}): "
             f"Yea={t[votechoice.YEA]} Nay={t[votechoice.NAY]} "
             f"Abstain={t[votechoice.ABSTAIN]} Absent={t[votechoice.ABSENT]} "
-            f"-> {'PASSED' if bill.passed() else 'FAILED'} "
-            f"| party-line={bill.party_line_score(cong.legislators):.2f}")
+            f"-> {'PASSED' if b.passed() else 'FAILED'} "
+            f"| party-line={b.pl_score(cong.legislators):.2f}")
     lines.append("\nMost bipartisan (cross party lines most):")
     for lid, score in cong.bipartisan(5):
         leg = cong.legislators[lid]
@@ -261,10 +261,10 @@ def main() -> None:
     args = p.parse_args()
 
     cong = congress()
-    bill = cong.csv_load(args.csv, args.bill, args.title, args.chamber)
-    print(demo_report(cong))
+    loaded = cong.csv_load(args.csv, args.bill, args.title, args.chamber)
+    print(demo_rep(cong))
     print(f"\nChambers: House quorum={housecham().quorum()} "
-          f"Senate quorum={SenateChamber().quorum()}")
+          f"Senate quorum={senatecham().quorum()}")
     if args.agree:
         a, b = args.agree
         print(f"\nAgreement {a} vs {b}: {cong.agreerate(a, b):.2%}")
