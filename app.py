@@ -34,7 +34,7 @@ st.write("Analyze congress.gov roll-call CSVs (e.g. House votes 362 and 295). "
          "The app counts Yea/Nay, checks pass/fail, and scores party-line, "
          "bipartisanship, and agreement.")
 
-st.subheader("Upload your vote CSVs")
+st.subheader("Upload your vote CSVs (USE ONLY CSVS OR ELSE TOOL WILL BREAK)")
 uploads = st.file_uploader("vote_csvs", type="csv",
                            accept_multiple_files=True,
                            label_visibility="collapsed")
@@ -45,14 +45,17 @@ bill_ids = st.text_input("Bill labels (comma-separated, optional)",
 if uploads:
     labels = [b.strip() or f"bill-{i+1}"
               for i, b in enumerate(bill_ids.split(","))]
+
     while len(labels) < len(uploads):
         labels.append(f"bill-{len(labels)+1}")
 
     cong = congress()
+
     for up, bid in zip(uploads, labels):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
             tmp.write(up.getvalue())
             tmp_path = tmp.name
+
         try:
             cong.csv_load(tmp_path, bid, bid, "house")
         finally:
@@ -60,32 +63,47 @@ if uploads:
 
     st.subheader(f"Loaded: {len(cong.legislators)} lawmakers, "
                  f"{len(cong.bills)} bills")
+
     st.write(f"House quorum = {housecham().quorum()} | "
              f"Senate quorum = {senatecham().quorum()}")
 
     for bid, b in cong.bills.items():
         t = b.tally()
+
         st.markdown(f"### {bid} — {'PASSED' if b.passed() else 'FAILED'}")
+
         st.write(f"Yea={t[votechoice.YEA]} Nay={t[votechoice.NAY]} "
                  f"Abstain={t[votechoice.ABSTAIN]} Absent={t[votechoice.ABSENT]} | "
                  f"party-line={b.pl_score(cong.legislators):.2f}")
 
     st.subheader("Most bipartisan (cross party lines most)")
-    rows = []
-    for lid, score in cong.bipartisan(10):
-        leg = cong.legislators[lid]
-        rows.append({"Name": leg.name, "Party": leg.party,
-                     "State": leg.state, "Score": round(score, 2)})
+
+    rows = [
+        {
+            "Name": cong.legislators[lid].name,
+            "Party": cong.legislators[lid].party,
+            "State": cong.legislators[lid].state,
+            "Score": round(score, 2),
+        }
+        for lid, score in cong.bipartisan(10)
+    ]
+
     st.table(rows)
 
     st.subheader("Agreement rate between two lawmakers")
+
     names = sorted(cong.legislators.keys())
+
     c1, c2 = st.columns(2)
+
     with c1:
         id1 = st.selectbox("Person 1", names, index=0)
+
     with c2:
         id2 = st.selectbox("Person 2", names,
                            index=min(1, len(names) - 1))
+
     st.write(f"Agreement: **{cong.agreerate(id1, id2):.0%}**")
+
 else:
     st.info("Upload a CSV(s) to begin. Or try the sample files in the github repo (in demo-data)!")
