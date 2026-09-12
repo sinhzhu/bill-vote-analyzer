@@ -54,7 +54,7 @@ if uploads:
             tmp.write(up.getvalue())
             tmp_path = tmp.name
         try:
-            cong.load_congress_gov_csv(tmp_path, bid, bid, "house")
+            cong.csv_load(tmp_path, bid, bid, "house")
         finally:
             os.unlink(tmp_path)
 
