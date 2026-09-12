@@ -3,7 +3,7 @@ import os
 
 import streamlit as st
 
-from congress_analyzer import Congress, HouseChamber, SenateChamber
+from congress_analyzer import congress, housecham, SenateChamber
 
 
 st.set_page_config(page_title="Bill & Vote Analyzer", layout="centered")
@@ -48,7 +48,7 @@ if uploads:
     while len(labels) < len(uploads):
         labels.append(f"bill-{len(labels)+1}")
 
-    cong = Congress()
+    cong = congress()
     for up, bid in zip(uploads, labels):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
             tmp.write(up.getvalue())
@@ -60,7 +60,7 @@ if uploads:
 
     st.subheader(f"Loaded: {len(cong.legislators)} lawmakers, "
                  f"{len(cong.bills)} bills")
-    st.write(f"House quorum = {HouseChamber().quorum()} | "
+    st.write(f"House quorum = {housecham().quorum()} | "
              f"Senate quorum = {SenateChamber().quorum()}")
 
     for bid, bill in cong.bills.items():

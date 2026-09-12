@@ -6,25 +6,25 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 
-class VoteChoice(Enum):
+class votechoice(Enum):
     YEA = "Yea"
     NAY = "Nay"
     ABSTAIN = "Abstain"   
     ABSENT = "Absent"     
 
     @staticmethod
-    def from_string(raw: str) -> "VoteChoice":
+    def from_string(raw: str) -> "votechoice":
         s = (raw or "").strip().lower()
         if s in ("yea", "yes", "aye", "y"):
-            return VoteChoice.YEA
+            return votechoice.YEA
         if s in ("nay", "no", "n"):
-            return VoteChoice.NAY
+            return votechoice.NAY
         if s in ("present", "abstain", "abstention", "pres"):
-            return VoteChoice.ABSTAIN
-        return VoteChoice.ABSENT
+            return votechoice.ABSTAIN
+        return votechoice.ABSENT
 
 @dataclass
-class Legislator:
+class legislator:
     legislator_id: str
     name: str
     party: str   
@@ -40,7 +40,7 @@ class Legislator:
             return "R"
         return "I"
 
-class Chamber:
+class chamber:
     def __init__(self, name: str, total_seats: int):
         self.name = name
         self.total_seats = total_seats
@@ -53,40 +53,40 @@ class Chamber:
         return f"{self.__class__.__name__}(name={self.name!r}, seats={self.total_seats})"
 
 
-class HouseChamber(Chamber):
+class housecham(chamber):
     def __init__(self) -> None:
         super().__init__("house", 435)
 
 
-class SenateChamber(Chamber):
+class SenateChamber(chamber):
     def __init__(self) -> None:
         super().__init__("senate", 100)
 
 
-def make_chamber(name: str) -> Chamber:
+def make_chamber(name: str) -> chamber:
     name = (name or "house").strip().lower()
-    return SenateChamber() if name == "senate" else HouseChamber()
+    return SenateChamber() if name == "senate" else housecham()
 
 @dataclass
-class Bill:
+class bill:
     bill_id: str
     title: str = ""
     chamber_name: str = "house"
-    votes: dict = field(default_factory=dict)  # legislator_id -> VoteChoice
+    votes: dict = field(default_factory=dict) 
 
-    def record(self, legislator_id: str, vote: VoteChoice) -> None:
+    def record(self, legislator_id: str, vote: votechoice) -> None:
         self.votes[legislator_id] = vote
 
     def tally(self) -> dict:
-        counts = {VoteChoice.YEA: 0, VoteChoice.NAY: 0,
-                  VoteChoice.ABSTAIN: 0, VoteChoice.ABSENT: 0}
+        counts = {votechoice.YEA: 0, votechoice.NAY: 0,
+                  votechoice.ABSTAIN: 0, votechoice.ABSENT: 0}
         for v in self.votes.values():
             counts[v] += 1
         return counts
 
     def passed(self) -> bool:
         t = self.tally()
-        return t[VoteChoice.YEA] > t[VoteChoice.NAY]
+        return t[votechoice.YEA] > t[votechoice.NAY]
 
     def party_line_score(self, legislators: dict) -> float:
         def yea_share(party: str) -> float | None:
@@ -95,9 +95,9 @@ class Bill:
                 leg = legislators.get(lid)
                 if leg is None or leg.party != party:
                     continue
-                if v == VoteChoice.YEA:
+                if v == votechoice.YEA:
                     yeas += 1
-                elif v == VoteChoice.NAY:
+                elif v == votechoice.NAY:
                     nays += 1
             total = yeas + nays
             return (yeas / total) if total else None
@@ -108,15 +108,15 @@ class Bill:
             return 0.0
         return abs(d - r)
 
-class Congress:
+class congress:
     def __init__(self) -> None:
-        self.legislators: dict[str, Legislator] = {}
-        self.bills: dict[str, Bill] = {}
+        self.legislators: dict[str, legislator] = {}
+        self.bills: dict[str, bill] = {}
 
-    def add_legislator(self, leg: Legislator) -> None:
+    def add_leg(self, leg: legislator) -> None:
         self.legislators[leg.legislator_id] = leg
 
-    def add_bill(self, bill: Bill) -> None:
+    def add_bill(self, bill: bill) -> None:
         self.bills[bill.bill_id] = bill
 
     @staticmethod
@@ -126,12 +126,12 @@ class Congress:
         base = re.sub(r"[^a-z0-9]+", "_", base).strip("_")
         return base or "unknown"
 
-    def load_congress_gov_csv(self, path: str, bill_id: str,
-                               title: str = "", chamber_name: str = "house") -> Bill:
+    def csv_load(self, path: str, bill_id: str,
+                               title: str = "", chamber_name: str = "house") -> bill:
         """Read a congress.gov roll-call CSV (with metadata rows on top)."""
         bill = self.bills.get(bill_id)
         if bill is None:
-            bill = Bill(bill_id=bill_id, title=title or bill_id,
+            bill = bill(bill_id=bill_id, title=title or bill_id,
                         chamber_name=chamber_name)
             self.add_bill(bill)
         else:
@@ -171,39 +171,39 @@ class Congress:
                     continue
                 lid = self.slug_id(raw_name)
                 clean_name = re.sub(r"\s*\[[^\]]*\]\s*", "", raw_name).strip()
-                party = Legislator.normalize_party(raw_party)
+                party = legislator.normalize_party(raw_party)
                 if lid not in self.legislators:
-                    self.add_legislator(Legislator(
+                    self.add_leg(legislator(
                         legislator_id=lid, name=clean_name,
                         party=party, state=raw_state,
                         chamber=chamber_name))
-                bill.record(lid, VoteChoice.from_string(raw_vote))
+                bill.record(lid, votechoice.from_string(raw_vote))
         return bill
 
-    def _party_majority(self, bill: Bill, party: str) -> VoteChoice | None:
+    def majority(self, bill: bill, party: str) -> votechoice | None:
         yeas = nays = 0
         for lid, v in bill.votes.items():
             leg = self.legislators.get(lid)
             if leg is None or leg.party != party:
                 continue
-            if v == VoteChoice.YEA:
+            if v == votechoice.YEA:
                 yeas += 1
-            elif v == VoteChoice.NAY:
+            elif v == votechoice.NAY:
                 nays += 1
         if yeas == 0 and nays == 0:
             return None
-        return VoteChoice.YEA if yeas >= nays else VoteChoice.NAY
+        return votechoice.YEA if yeas >= nays else votechoice.NAY
 
-    def bipartisanship_score(self, legislator_id: str) -> float:
+    def bipart_score(self, legislator_id: str) -> float:
         leg = self.legislators.get(legislator_id)
         if leg is None:
             return 0.0
         crossed = total = 0
         for bill in self.bills.values():
             v = bill.votes.get(legislator_id)
-            if v not in (VoteChoice.YEA, VoteChoice.NAY):
+            if v not in (votechoice.YEA, votechoice.NAY):
                 continue
-            majority = self._party_majority(bill, leg.party)
+            majority = self.majority(bill, leg.party)
             if majority is None:
                 continue
             total += 1
@@ -211,47 +211,47 @@ class Congress:
                 crossed += 1
         return (crossed / total) if total else 0.0
 
-    def agreement_rate(self, id1: str, id2: str) -> float:
+    def agreerate(self, id1: str, id2: str) -> float:
         same = both = 0
         for bill in self.bills.values():
             v1 = bill.votes.get(id1)
             v2 = bill.votes.get(id2)
-            if v1 not in (VoteChoice.YEA, VoteChoice.NAY):
+            if v1 not in (votechoice.YEA, votechoice.NAY):
                 continue
-            if v2 not in (VoteChoice.YEA, VoteChoice.NAY):
+            if v2 not in (votechoice.YEA, votechoice.NAY):
                 continue
             both += 1
             if v1 == v2:
                 same += 1
         return (same / both) if both else 0.0
 
-    def most_bipartisan(self, n: int = 5) -> list:
-        scored = [(lid, self.bipartisanship_score(lid))
+    def bipartisan(self, n: int = 5) -> list:
+        scored = [(lid, self.bipart_score(lid))
                   for lid in self.legislators]
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored[:n]
 
 
-def demo_report(cong: Congress) -> str:
+def demo_report(cong: congress) -> str:
     lines = []
-    lines.append(f"Legislators: {len(cong.legislators)}  Bills: {len(cong.bills)}")
+    lines.append(f"legislators: {len(cong.legislators)}  Bills: {len(cong.bills)}")
     for bid, bill in cong.bills.items():
         t = bill.tally()
         lines.append(
             f"\nBill {bid} ({bill.title}): "
-            f"Yea={t[VoteChoice.YEA]} Nay={t[VoteChoice.NAY]} "
-            f"Abstain={t[VoteChoice.ABSTAIN]} Absent={t[VoteChoice.ABSENT]} "
+            f"Yea={t[votechoice.YEA]} Nay={t[votechoice.NAY]} "
+            f"Abstain={t[votechoice.ABSTAIN]} Absent={t[votechoice.ABSENT]} "
             f"-> {'PASSED' if bill.passed() else 'FAILED'} "
             f"| party-line={bill.party_line_score(cong.legislators):.2f}")
     lines.append("\nMost bipartisan (cross party lines most):")
-    for lid, score in cong.most_bipartisan(5):
+    for lid, score in cong.bipartisan(5):
         leg = cong.legislators[lid]
         lines.append(f"  {leg.name} [{leg.party}-{leg.state}] score={score:.2f}")
     return "\n".join(lines)
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Legislative Bill & Vote Analyzer")
+    p = argparse.ArgumentParser(description="Legislative bill & Vote Analyzer")
     p.add_argument("csv", help="congress.gov roll-call CSV path")
     p.add_argument("--bill", default="h119-362", help="bill id label")
     p.add_argument("--title", default="", help="bill title")
@@ -260,14 +260,14 @@ def main() -> None:
                    help="show agreement rate between two legislator ids")
     args = p.parse_args()
 
-    cong = Congress()
-    bill = cong.load_congress_gov_csv(args.csv, args.bill, args.title, args.chamber)
+    cong = congress()
+    bill = cong.csv_load(args.csv, args.bill, args.title, args.chamber)
     print(demo_report(cong))
-    print(f"\nChambers: House quorum={HouseChamber().quorum()} "
+    print(f"\nChambers: House quorum={housecham().quorum()} "
           f"Senate quorum={SenateChamber().quorum()}")
     if args.agree:
         a, b = args.agree
-        print(f"\nAgreement {a} vs {b}: {cong.agreement_rate(a, b):.2%}")
+        print(f"\nAgreement {a} vs {b}: {cong.agreerate(a, b):.2%}")
 
 
 if __name__ == "__main__":
